@@ -225,11 +225,7 @@ export default function TeamPage() {
                 className="rounded-2xl bg-[#F5EEDB] border border-[#BCAB94] p-5 flex items-center gap-4 shadow-xs hover:shadow-md hover:border-blue-600 hover:bg-[#FAF6EE] transition-all"
               >
                 <div className="w-12 h-12 rounded-full overflow-hidden bg-blue-100 border-2 border-blue-300 shadow-xs shrink-0 flex items-center justify-center text-blue-800 font-bold text-xs">
-                  {advisor.avatar ? (
-                    <img src={advisor.avatar} alt={advisor.name} className="w-full h-full object-cover" />
-                  ) : (
-                    getInitials(advisor.name)
-                  )}
+                  {getInitials(advisor.name)}
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="text-sm font-bold text-[#0B1D3A] truncate">
