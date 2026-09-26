@@ -26,10 +26,8 @@ export default function TeamPage() {
   // Office Bearers (excluding the Founder who has his own dedicated page)
   const officeBearers = BPSCVS_COMMITTEE_MEMBERS.filter((m) => m.id !== founder.id);
 
-  // Advisory Board (excluding Founder entry if present)
-  const advisoryBoard = BPSCVS_ADVISORS.filter(
-    (a) => !a.name.toLowerCase().includes('founder') && !a.name.toLowerCase().includes('neeraj')
-  );
+  // Advisory Board (including Founder)
+  const advisoryBoard = [...BPSCVS_ADVISORS];
 
   const getInitials = (name: string) => {
     const clean = name.replace(/^(Shri|Smt\.|Dr\.|Mr\.|Mrs\.)\s+/i, '');
@@ -99,6 +97,54 @@ export default function TeamPage() {
             Dedicated office bearers, advisors, and executive members working together for Bani Park Sindhi Colony.
           </p>
         </div>
+
+        {/* ─── SECTION 0: Founder Showcase ─── */}
+        <section className="mb-12 border-b border-[#BCAB94] pb-10">
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="w-full max-w-sm rounded-3xl overflow-hidden shadow-xl border-4 border-[#F5EEDB] bg-slate-100 relative shrink-0">
+              <div className="aspect-[3/4] w-full relative overflow-hidden">
+                <img
+                  src={founder.avatar || '/neeraj-dialani-founder.jpg'}
+                  alt={founder.name}
+                  className="w-full h-full object-cover object-top"
+                  style={{ maxHeight: '460px', width: '100%' }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+              </div>
+
+              <div className="absolute bottom-4 left-4 right-4 bg-[#F5EEDB]/95 backdrop-blur-md rounded-2xl p-4 border border-[#BCAB94] shadow-sm">
+                <div className="text-base font-bold text-[#0B1D3A]">{founder.name}</div>
+                <div className="text-xs text-blue-800 font-bold mt-0.5">
+                  Founder
+                </div>
+                <div className="text-[11px] text-slate-600 mt-1">
+                  Bani Park Sindhi Colony Vikas Samiti • Established 2012
+                </div>
+                <div className="text-[10px] text-slate-500 mt-0.5">
+                  140, City Plaza, Space Cinema, Jhotwara Road, Jaipur
+                </div>
+              </div>
+            </div>
+            
+            <div className="max-w-xl">
+              <h2 className="text-3xl font-display font-bold text-[#0B1D3A]">
+                {founder.name}
+              </h2>
+              <div className="text-lg font-bold text-blue-800 mt-1">Founder & Visionary</div>
+              <p className="text-sm text-slate-700 mt-4 leading-relaxed font-medium">
+                In 2012, Shri Neeraj Dialani recognized the need for an organized community body to preserve Sindhi cultural heritage, coordinate civic infrastructure, and bring families together for annual festivals in Bani Park Sindhi Colony, Jaipur.
+              </p>
+              <div className="mt-6">
+                <Link
+                  href="/about/founder"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold shadow-md transition-colors"
+                >
+                  Read Full Founder Profile
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ─── SECTION 1: Office Bearers & Key Posts ─── */}
         <section className="space-y-6">
@@ -179,7 +225,11 @@ export default function TeamPage() {
                 className="rounded-2xl bg-[#F5EEDB] border border-[#BCAB94] p-5 flex items-center gap-4 shadow-xs hover:shadow-md hover:border-blue-600 hover:bg-[#FAF6EE] transition-all"
               >
                 <div className="w-12 h-12 rounded-full overflow-hidden bg-blue-100 border-2 border-blue-300 shadow-xs shrink-0 flex items-center justify-center text-blue-800 font-bold text-xs">
-                  {getInitials(advisor.name)}
+                  {advisor.avatar ? (
+                    <img src={advisor.avatar} alt={advisor.name} className="w-full h-full object-cover" />
+                  ) : (
+                    getInitials(advisor.name)
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="text-sm font-bold text-[#0B1D3A] truncate">

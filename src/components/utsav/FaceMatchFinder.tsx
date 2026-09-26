@@ -6,6 +6,12 @@ import { FESTIVAL_EVENTS } from '@/data/festivalEvents';
 import { EventPhoto, FaceScanResult } from '@/types/utsav';
 import { playTempleBell, playSitarPluck } from '@/utils/audio';
 import { downloadSinglePhoto, downloadMultiplePhotosDirectJpg } from '@/lib/zipService';
+import {
+  extractSelfieDescriptor,
+  detectFacesAndExtractEmbeddings,
+  evaluateFaceMatch,
+  loadFaceApiModels,
+} from '@/lib/faceRecognition';
 
 interface FaceMatchFinderProps {
   onOpenPhotoModal?: (photo: EventPhoto) => void;
@@ -78,7 +84,7 @@ export const FaceMatchFinder: React.FC<FaceMatchFinderProps> = ({ onOpenPhotoMod
     setIsCameraActive(false);
     playTempleBell(1050);
 
-    runFaceRecognition(dataUrl, 'face-1');
+    runFaceRecognition(dataUrl);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,72 +97,108 @@ export const FaceMatchFinder: React.FC<FaceMatchFinderProps> = ({ onOpenPhotoMod
       setSelectedImage(url);
       setCurrentFaceId('face-1');
       playSitarPluck('Pa');
-      runFaceRecognition(url, 'face-1');
+      runFaceRecognition(url);
     };
     reader.readAsDataURL(file);
   };
 
-  const runFaceRecognition = (imageUrl: string, faceId: string) => {
+  const runFaceRecognition = async (selfieUrl: string) => {
     setIsScanning(true);
-    setScanProgress(0);
+    setScanProgress(10);
     setHasScanned(false);
     setResults([]);
     setSelectedPhotoIds(new Set());
 
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 15;
-      if (progress > 100) {
-        clearInterval(interval);
-        finalizeMatches(faceId);
-      } else {
-        setScanProgress(progress);
-      }
-    }, 110);
-  };
+    try {
+      await loadFaceApiModels();
+      setScanProgress(20);
 
-  const finalizeMatches = (faceId: string) => {
-    const allPhotos: EventPhoto[] = [];
-    FESTIVAL_EVENTS.forEach((ev) => {
-      if (selectedEventId === 'all' || selectedEventId === ev.id) {
-        allPhotos.push(...ev.photos);
-      }
-    });
-
-    const matched: FaceScanResult[] = [];
-    allPhotos.forEach((photo) => {
-      const isDirectMatch = photo.residentIds.includes(faceId);
-      if (isDirectMatch) {
-        const similarity = Math.floor(93 + Math.random() * 6);
-        matched.push({
-          photo,
-          similarity,
-          faceBox: {
-            top: 25,
-            left: 30,
-            width: 25,
-            height: 30,
-          },
-          matchedFeatures: ['Facial Landmark 99.2%', 'Biometric Vector 98.4%'],
-        });
-      }
-    });
-
-    if (matched.length === 0) {
-      allPhotos.slice(0, 4).forEach((photo) => {
-        matched.push({
-          photo,
-          similarity: Math.floor(86 + Math.random() * 8),
-          faceBox: { top: 20, left: 35, width: 28, height: 32 },
-          matchedFeatures: ['Likeness Match 87.5%', 'Event Context'],
-        });
+      // Create image element from selfie URL
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      await new Promise((res, rej) => {
+        img.onload = res;
+        img.onerror = rej;
+        img.src = selfieUrl;
       });
-    }
 
-    setResults(matched);
-    setIsScanning(false);
-    setHasScanned(true);
-    playTempleBell(880);
+      // Extract descriptor vector from user's selfie
+      const selfieFace = await extractSelfieDescriptor(img);
+      if (!selfieFace) {
+        throw new Error('No clear face detected in the photo. Please try taking a brighter, front-facing selfie.');
+      }
+
+      setScanProgress(35);
+
+      const allPhotos: EventPhoto[] = [];
+      FESTIVAL_EVENTS.forEach((ev) => {
+        if (selectedEventId === 'all' || selectedEventId === ev.id) {
+          allPhotos.push(...ev.photos);
+        }
+      });
+
+      const matched: FaceScanResult[] = [];
+      const totalPhotos = allPhotos.length;
+
+      // Scan through all photos in the event
+      for (let i = 0; i < totalPhotos; i++) {
+        const photo = allPhotos[i];
+        setScanProgress(35 + Math.round(((i + 1) / totalPhotos) * 60));
+
+        try {
+          const targetImg = new Image();
+          targetImg.crossOrigin = 'anonymous';
+          await new Promise((res) => {
+            targetImg.onload = res;
+            targetImg.onerror = () => res(null);
+            targetImg.src = photo.url;
+          });
+
+          const detectedFaces = await detectFacesAndExtractEmbeddings(targetImg);
+          let highestScore = 0;
+          let bestFaceBox = undefined;
+          let isMatch = false;
+
+          for (const face of detectedFaces) {
+            const evaluation = evaluateFaceMatch(selfieFace.descriptor, face.descriptor);
+            if (evaluation.isMatch && evaluation.similarityScore > highestScore) {
+              highestScore = evaluation.similarityScore;
+              bestFaceBox = face.box;
+              isMatch = true;
+            }
+          }
+
+          if (isMatch) {
+            matched.push({
+              photo,
+              similarity: Math.round(highestScore * 100),
+              faceBox: bestFaceBox ? {
+                top: bestFaceBox.y,
+                left: bestFaceBox.x,
+                width: bestFaceBox.width,
+                height: bestFaceBox.height
+              } : { top: 20, left: 20, width: 20, height: 20 },
+              matchedFeatures: ['Biometric Match', 'Event Context'],
+            });
+          }
+        } catch (e) {
+          // Ignore single photo processing error
+        }
+      }
+
+      matched.sort((a, b) => b.similarity - a.similarity);
+      setResults(matched);
+      setIsScanning(false);
+      setHasScanned(true);
+      setScanProgress(100);
+      if (matched.length > 0) {
+        playTempleBell(880);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setCameraError(err.message || 'Face detection failed. Please try again.');
+      setIsScanning(false);
+    }
   };
 
   // Toggle selection for a single photo
@@ -250,7 +292,7 @@ export const FaceMatchFinder: React.FC<FaceMatchFinderProps> = ({ onOpenPhotoMod
             value={selectedEventId}
             onChange={(e) => {
               setSelectedEventId(e.target.value);
-              if (selectedImage) runFaceRecognition(selectedImage, currentFaceId);
+              if (selectedImage) runFaceRecognition(selectedImage);
             }}
             className="w-full sm:w-auto bg-transparent text-[#0B1D3A] dark:text-white text-xs font-bold focus:outline-none cursor-pointer"
           >

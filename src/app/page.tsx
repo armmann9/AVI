@@ -222,6 +222,12 @@ export default function HomePage() {
             >
               Timetable
             </button>
+            <Link
+              href="/donation"
+              className="px-3.5 py-2 rounded-lg hover:text-blue-700 dark:hover:text-white hover:bg-[#DFD4C0] dark:hover:bg-slate-800 transition-colors font-bold text-amber-600 dark:text-amber-400"
+            >
+              Benevolent Contribution
+            </Link>
 
             {/* About Us Dropdown on Hover & Click */}
             <div

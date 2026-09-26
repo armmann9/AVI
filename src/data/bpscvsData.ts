@@ -114,7 +114,7 @@ export const BPSCVS_COMMITTEE_MEMBERS: CommitteeMember[] = [
     hindiDesignation: 'संरक्षक',
     roleType: 'patron',
     wing: 'senior',
-    phone: '+91 99288 29615',
+    phone: '+91 98288 29615',
     plotNo: 'Sindhi Colony, Bani Park, Jaipur',
     avatar: '',
     shortIntro: 'Honorable Patron upholding the cultural values, ethical foundations, and community harmony of Sindhi Colony.',
@@ -140,6 +140,7 @@ export const BPSCVS_COMMITTEE_MEMBERS: CommitteeMember[] = [
 
 export const BPSCVS_ADVISORS = [
   { name: 'Shri Neeraj Dialani (Founder)', phone: '+91 98292 67890' },
+  { name: 'Shri Hari Lal Dialani (Patron)', phone: '+91 98288 29615' },
   { name: 'Shri Balraj Khanchandani', phone: '+91 98292 20506' },
   { name: 'Shri Deepak Kalra', phone: '+91 99297 36810' },
   { name: 'Shri Kapil Gurdaswani', phone: '+91 97992 96363' },
